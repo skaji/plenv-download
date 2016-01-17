@@ -1,0 +1,153 @@
+#!/usr/bin/env perl
+use 5.008005;
+use strict;
+use warnings;
+
+package App;
+use Config;
+use Cwd ();
+use File::Basename ();
+use File::Copy ();
+use File::Path ();
+use File::Temp ();
+use File::pushd ();
+use Getopt::Long qw(:config no_auto_abbrev no_ignore_case bundling);
+use HTTP::Tinyish;
+use JSON::PP ();
+
+our $VERSION = "0.01";
+
+sub _numify {
+    my $v = shift;
+    my ($v2, $v1, $v0, $v_1) = split /\./, $v;
+    return 0 unless defined $v0;
+    $v2*(100**2) + $v1*100 + $v0 + ($v_1 || 0)/100;
+}
+sub new { bless {}, shift }
+sub run {
+    my ($self, @argv) = @_;
+    $self = $self->new unless ref $self;
+    local @ARGV = @argv;
+    my $as;
+    GetOptions
+        "l|list"    => sub { $self->cmd_list; exit },
+        "h|help"    => sub { $self->cmd_help; exit },
+        "v|version" => sub { print "plenv-download version $VERSION\n"; exit },
+        "as=s"      => \$as,
+    or exit 1;
+
+    my $version = shift @ARGV;
+    die "Missing version argument, try `plenv download --help`\n" unless $version;
+    my $available = $self->available;
+    my $release;
+    if ($version =~ /latest/i) {
+        $release = ${$available}[-1];
+        $version = $release->{version};
+    } else {
+        ($release) = grep { $_->{version} eq $version} @$available;
+    }
+    die "Cannot find '$version', try `plenv donwload --list`\n" unless $release;
+
+    my $archname = $Config{archname};
+    if (my $url = $release->{url}{$archname}) {
+        my $root = $ENV{PLENV_ROOT} ? $ENV{PLENV_ROOT} : "$ENV{HOME}/.plenv";
+        $as = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
+        warn "Downloading $url\n";
+        $self->cmd_install($url => $as);
+        warn "Successfully installed relocatable-$version, try `plenv versions`\n";
+    } else {
+        die "Sorry, there is no precompiled perls for your platform '$archname'\n";
+    }
+
+}
+
+sub cmd_help {
+    my $self = shift;
+    print <main::DATA>;
+    close main::DATA;
+}
+sub cmd_list {
+    my $self = shift;
+    my $available = $self->available;
+    for my $i (0 .. $#{$available}) {
+        my $version = $available->[$i]{version};
+        my $body    = $available->[$i]{body};
+        print "* $version";
+        print " ($body)" if $body;
+        print "  **LATEST**" if $i == $#{$available};
+        print "\n";
+    }
+}
+sub cmd_install {
+    my ($self, $url, $dir) = @_;
+    die "Already exists $dir\n" if -e $dir;
+    $dir = Cwd::abs_path($dir);
+    my $parent = File::Basename::dirname($dir);
+    File::Path::mkpath($parent) unless -d $parent;
+    my $tempdir = File::Temp::tempdir(CLEANUP => 1);
+    my $base = File::Basename::basename($url);
+    my $file = "$tempdir/$base";
+
+    my $res = HTTP::Tinyish->new->mirror($url => $file);
+    die "Failed to get $url: $res->{status} $res->{reason}\n" unless $res->{success};
+    {
+        my $guard = File::pushd::pushd($tempdir);
+        (my $target = $base) =~ s/\.tar\.gz$//;
+        system "tar", "xzf", $base;
+        die "Failed `tar xzf $base`\n" if $? != 0 || !-d $target;
+        File::Copy::move($target, $dir)
+            or die "Faile to move $target to $dir: $!\n";
+    }
+}
+sub available {
+    my $self = shift;
+    return $self->{available} if $self->{available};
+    my $url = "https://api.github.com/repos/shoichikaji/relocatable-perl/releases";
+    my $res = HTTP::Tinyish->new->get($url);
+    die "Failed to get $url: $res->{status} $res->{reason}\n" unless $res->{success};
+    my $releases = JSON::PP::decode_json($res->{content});
+    my @release;
+    for my $r (@$releases) {
+        my $version = $r->{tag_name};
+        my $assets  = $r->{assets};
+        my $body    = $r->{body};
+        $body =~ s/^[*-]\s+//gsm;
+        $body =~ s/\r\n/ /g;
+        my %url;
+        for my $asset (@$assets) {
+            my $url = $asset->{"browser_download_url"};
+            if ($asset->{name} eq "perl-darwin-2level.tar.gz") {
+                $url{"darwin-2level"} = $url;
+            } elsif ($asset->{name} eq "perl-x86_64-linux.tar.gz") {
+                $url{"x86_64-linux"} = $url;
+            }
+        }
+        push @release, { version => $version, body => $body, url => \%url } if %url;
+    }
+    $self->{available} = [
+        sort { _numify($a->{version}) <=> _numify($b->{version}) }
+        grep { _numify($_->{version}) }
+        @release
+    ];
+}
+
+package main;
+App->run(@ARGV);
+
+__DATA__
+
+Summary: Download precompiled perl binaries
+ from https://github.com/shoichikaji/relocatable-perl
+
+Usage: plenv download [options] <version>
+
+  -l, --list       list all available versions
+      --as=NAME    download a precompiled perl binary as NAME
+  -v, --version    show version and exit
+  -h, --help       show this help
+
+Examples:
+ $ plenv download latest    # automatically donwload latest perl
+ $ plenv donwload 5.22.0.0
+ $ plenv download --list
+
