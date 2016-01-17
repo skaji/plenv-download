@@ -4,7 +4,7 @@ This is a [plenv](https://github.com/tokuhirom/plenv) plugin
 that downloads precompiled perl binaries
 from https://github.com/shoichikaji/relocatable-perl.
 
-That is, you don't need to compile perls from source code, just downloading.
+That is, you do **NOT** need to compile perls from source code, just downloading.
 
 ## Install
 
@@ -16,6 +16,7 @@ $ git clone https://github.com/shoichikaji/plenv-download ~/.plenv/plugins/plenv
 
 ```
 $ plenv donwload latest
+Successfully installed relocatable-5.22.1.0, try `plenv versions`.
 
 $ plenv versions
 * system
@@ -24,7 +25,7 @@ $ plenv versions
 $ plenv global relocatable-5.22.1.0
 
 $ perl -v
-  This is perl 5, version 22, subversion 1 (v5.22.1) built for darwin-2level
+This is perl 5, version 22, subversion 1 (v5.22.1) built for darwin-2level
 ...
 ```
 
@@ -36,7 +37,7 @@ Relocatable perls are only available for 64bit OS X and Linux.
 
 Shoichi Kaji
 
-## Lincense
+## License
 
 Licensed under the same terms as Perl.
 
