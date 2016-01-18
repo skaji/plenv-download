@@ -182,7 +182,6 @@ use strict;
 use warnings;
 
 package App;
-use Config;
 use Cwd ();
 use File::Basename ();
 use File::Copy ();
@@ -226,7 +225,7 @@ sub run {
     }
     die "Cannot find '$version', try `plenv donwload --list`\n" unless $release;
 
-    my $archname = $Config{archname};
+    my $archname = $self->archname;
     if (my $url = $release->{url}{$archname}) {
         my $root = $ENV{PLENV_ROOT} ? $ENV{PLENV_ROOT} : "$ENV{HOME}/.plenv";
         $as = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
@@ -236,7 +235,18 @@ sub run {
     } else {
         die "Sorry, there is no precompiled perls for your platform '$archname'\n";
     }
+}
 
+sub archname {
+    my $uname = `uname -sm`;
+    chomp $uname;
+    if ($uname =~ /^Darwin\s+x86_64$/i) {
+        "darwin-2level";
+    } elsif ($uname =~ /^Linux\s+x86_64$/i) {
+        "x86_64-linux";
+    } else {
+        $uname;
+    }
 }
 
 sub cmd_help {
