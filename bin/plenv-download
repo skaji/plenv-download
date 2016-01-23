@@ -25,7 +25,7 @@ $fatpacked{"HTTP/Tiny.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'HTTP_
 HTTP_TINY
 
 $fatpacked{"HTTP/Tinyish.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'HTTP_TINYISH';
-  package HTTP::Tinyish;use strict;use warnings;use Carp ();our$VERSION='0.06';our$PreferredBackend;our@Backends=map "HTTP::Tinyish::$_",qw(LWP HTTPTiny Curl Wget);my%configured;sub new {my($class,%attr)=@_;bless \%attr,$class}for my$method (qw/get head put post delete mirror/){no strict 'refs';eval <<"HERE"}sub request {my$self=shift;$self->_backend_for($_[1])->request(@_)}sub _backend_for {my($self,$url)=@_;my($scheme)=$url =~ m!^(https?):!;Carp::croak "URL Scheme '$url' not supported." unless$scheme;for my$backend ($self->backends){$self->configure_backend($backend)or next;if ($backend->supports($scheme)){return$backend->new(%$self)}}Carp::croak "No backend configured for scheme $scheme"}sub backends {$PreferredBackend ? ($PreferredBackend): @Backends}sub configure_backend {my($self,$backend)=@_;unless (exists$configured{$backend}){$configured{$backend}=eval {require_module($backend);$backend->configure}}$configured{$backend}}sub require_module {local $_=shift;s!::!/!g;require "$_.pm"}1;
+  package HTTP::Tinyish;use strict;use warnings;use Carp ();our$VERSION='0.07';our$PreferredBackend;our@Backends=map "HTTP::Tinyish::$_",qw(LWP HTTPTiny Curl Wget);my%configured;sub new {my($class,%attr)=@_;bless \%attr,$class}for my$method (qw/get head put post delete mirror/){no strict 'refs';eval <<"HERE"}sub request {my$self=shift;$self->_backend_for($_[1])->request(@_)}sub _backend_for {my($self,$url)=@_;my($scheme)=$url =~ m!^(https?):!;Carp::croak "URL Scheme '$url' not supported." unless$scheme;for my$backend ($self->backends){$self->configure_backend($backend)or next;if ($backend->supports($scheme)){return$backend->new(%$self)}}Carp::croak "No backend configured for scheme $scheme"}sub backends {$PreferredBackend ? ($PreferredBackend): @Backends}sub configure_backend {my($self,$backend)=@_;unless (exists$configured{$backend}){$configured{$backend}=eval {require_module($backend);$backend->configure}}$configured{$backend}}sub require_module {local $_=shift;s!::!/!g;require "$_.pm"}1;
       sub $method {
           my \$self = shift;
           \$self->_backend_for(\$_[0])->$method(\@_);
@@ -54,7 +54,7 @@ $fatpacked{"HTTP/Tinyish/HTTPTiny.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"
 HTTP_TINYISH_HTTPTINY
 
 $fatpacked{"HTTP/Tinyish/LWP.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'HTTP_TINYISH_LWP';
-  package HTTP::Tinyish::LWP;use strict;use parent qw(HTTP::Tinyish::Base);use LWP 5.802;use LWP::UserAgent;my%supports=(http=>1);sub configure {my%meta=(LWP=>$LWP::VERSION,);if (eval {require LWP::Protocol::https;1}){$supports{https}=1;$meta{"LWP::Protocol::https"}=$LWP::Protocol::https::VERSION}\%meta}sub supports {$supports{$_[1]}}sub new {my($class,%attr)=@_;my$ua=LWP::UserAgent->new;bless {ua=>$class->translate_lwp($ua,%attr),},$class}sub _headers_to_hashref {my($self,$hdrs)=@_;my%headers;for my$field ($hdrs->header_field_names){$headers{lc$field}=$hdrs->header($field)}\%headers}sub request {my($self,$method,$url,$opts)=@_;$opts ||= {};my$req=HTTP::Request->new($method=>$url);if ($opts->{headers}){$req->header(%{$opts->{headers}})}if ($opts->{content}){$req->content($opts->{content})}my$res=$self->{ua}->request($req);return {url=>$url,content=>$res->decoded_content(charset=>'none'),success=>$res->is_success,status=>$res->code,reason=>$res->message,headers=>$self->_headers_to_hashref($res->headers),}}sub mirror {my($self,$url,$file)=@_;my$res=$self->{ua}->mirror($url,$file);return {url=>$url,content=>$res->decoded_content,success=>$res->is_success,status=>$res->code,reason=>$res->message,headers=>$self->_headers_to_hashref($res->headers),}}sub translate_lwp {my($class,$agent,%attr)=@_;$agent->parse_head(0);$agent->env_proxy;$agent->timeout(delete$attr{timeout}|| 60);$agent->max_redirect(delete$attr{max_redirect}|| 5);$agent->agent(delete$attr{agent}|| "HTTP-Tinyish/$HTTP::Tinyish::VERSION");unless ($attr{verify_SSL}){if ($agent->can("ssl_opts")){$agent->ssl_opts(verify_hostname=>0)}}if ($attr{default_headers}){$agent->default_headers(HTTP::Headers->new(%{$attr{default_headers}}))}$agent}1;
+  package HTTP::Tinyish::LWP;use strict;use parent qw(HTTP::Tinyish::Base);use LWP 5.802;use LWP::UserAgent;my%supports=(http=>1);sub configure {my%meta=(LWP=>$LWP::VERSION,);if (eval {require LWP::Protocol::https;1}){$supports{https}=1;$meta{"LWP::Protocol::https"}=$LWP::Protocol::https::VERSION}\%meta}sub supports {$supports{$_[1]}}sub new {my($class,%attr)=@_;my$ua=LWP::UserAgent->new;bless {ua=>$class->translate_lwp($ua,%attr),},$class}sub _headers_to_hashref {my($self,$hdrs)=@_;my%headers;for my$field ($hdrs->header_field_names){$headers{lc$field}=$hdrs->header($field)}\%headers}sub request {my($self,$method,$url,$opts)=@_;$opts ||= {};my$req=HTTP::Request->new($method=>$url);if ($opts->{headers}){$req->header(%{$opts->{headers}})}if ($opts->{content}){$req->content($opts->{content})}my$res=$self->{ua}->request($req);return {url=>$url,content=>$res->decoded_content(charset=>'none'),success=>$res->is_success,status=>$res->code,reason=>$res->message,headers=>$self->_headers_to_hashref($res->headers),}}sub mirror {my($self,$url,$file)=@_;my$res=$self->{ua}->mirror($url,$file);return {url=>$url,content=>$res->decoded_content,success=>$res->is_success || $res->code==304,status=>$res->code,reason=>$res->message,headers=>$self->_headers_to_hashref($res->headers),}}sub translate_lwp {my($class,$agent,%attr)=@_;$agent->parse_head(0);$agent->env_proxy;$agent->timeout(delete$attr{timeout}|| 60);$agent->max_redirect(delete$attr{max_redirect}|| 5);$agent->agent(delete$attr{agent}|| "HTTP-Tinyish/$HTTP::Tinyish::VERSION");unless ($attr{verify_SSL}){if ($agent->can("ssl_opts")){$agent->ssl_opts(verify_hostname=>0)}}if ($attr{default_headers}){$agent->default_headers(HTTP::Headers->new(%{$attr{default_headers}}))}$agent}1;
 HTTP_TINYISH_LWP
 
 $fatpacked{"HTTP/Tinyish/Wget.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'HTTP_TINYISH_WGET';
@@ -228,10 +228,19 @@ sub run {
     my $archname = $self->archname;
     if (my $url = $release->{url}{$archname}) {
         my $root = $ENV{PLENV_ROOT} ? $ENV{PLENV_ROOT} : "$ENV{HOME}/.plenv";
-        $as = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
+
+        my $target = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
+        die "Already exists $target\n" if -e $target;
+
+        my $cache_dir = "$root/cache/relocatable-$version";
+        File::Path::mkpath($cache_dir) unless -d $cache_dir;
+        my $cache = "$cache_dir/" . File::Basename::basename($url);
+
         warn "Downloading $url\n";
-        $self->cmd_install($url => $as);
-        warn "Successfully installed relocatable-$version, try `plenv versions`\n";
+        $self->download($url => $cache);
+        $self->install($cache => $target);
+        my $name = "relocatable-$version" . ($as ? " (as $as)" : "");
+        warn "Successfully installed $name, try `plenv versions`\n";
     } else {
         die "Sorry, there is no precompiled perls for your platform '$archname'\n";
     }
@@ -266,27 +275,29 @@ sub cmd_list {
         print "\n";
     }
 }
-sub cmd_install {
-    my ($self, $url, $dir) = @_;
-    die "Already exists $dir\n" if -e $dir;
-    $dir = Cwd::abs_path($dir);
-    my $parent = File::Basename::dirname($dir);
-    File::Path::mkpath($parent) unless -d $parent;
-    my $tempdir = File::Temp::tempdir(CLEANUP => 1);
-    my $base = File::Basename::basename($url);
-    my $file = "$tempdir/$base";
 
-    my $res = HTTP::Tinyish->new->mirror($url => $file);
-    die "Failed to get $url: $res->{status} $res->{reason}\n" unless $res->{success};
-    {
-        my $guard = File::pushd::pushd($tempdir);
-        (my $target = $base) =~ s/\.tar\.gz$//;
-        system "tar", "xzf", $base;
-        die "Failed `tar xzf $base`\n" if $? != 0 || !-d $target;
-        File::Copy::move($target, $dir)
-            or die "Faile to move $target to $dir: $!\n";
+sub install {
+    my ($self, $tarball, $as) = @_;
+    my $tempdir = File::Temp::tempdir(CLEANUP => 1);
+    my $guard = File::pushd::pushd($tempdir);
+    (my $target = File::Basename::basename($tarball)) =~ s/\.tar\.gz$//;
+    system "tar", "xzf", $tarball;
+    die "Failed `tar xzf $tarball`\n" if $? != 0 || !-d $target;
+    File::Copy::move($target, $as)
+        or die "Faile to move $target to $as: $!\n";
+}
+
+sub download {
+    my ($self, $url, $target) = @_;
+    my $res = HTTP::Tinyish->new->mirror($url => $target);
+    if ($res->{success}) {
+        warn "Using cache $target\n" if $res->{status} == 304;
+        return 1;
+    } else {
+        die "Failed to download $url: $res->{status} $res->{reason}\n";
     }
 }
+
 sub available {
     my $self = shift;
     return $self->{available} if $self->{available};

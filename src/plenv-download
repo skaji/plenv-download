@@ -50,10 +50,19 @@ sub run {
     my $archname = $self->archname;
     if (my $url = $release->{url}{$archname}) {
         my $root = $ENV{PLENV_ROOT} ? $ENV{PLENV_ROOT} : "$ENV{HOME}/.plenv";
-        $as = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
+
+        my $target = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
+        die "Already exists $target\n" if -e $target;
+
+        my $cache_dir = "$root/cache/relocatable-$version";
+        File::Path::mkpath($cache_dir) unless -d $cache_dir;
+        my $cache = "$cache_dir/" . File::Basename::basename($url);
+
         warn "Downloading $url\n";
-        $self->cmd_install($url => $as);
-        warn "Successfully installed relocatable-$version, try `plenv versions`\n";
+        $self->download($url => $cache);
+        $self->install($cache => $target);
+        my $name = "relocatable-$version" . ($as ? " (as $as)" : "");
+        warn "Successfully installed $name, try `plenv versions`\n";
     } else {
         die "Sorry, there is no precompiled perls for your platform '$archname'\n";
     }
@@ -88,27 +97,29 @@ sub cmd_list {
         print "\n";
     }
 }
-sub cmd_install {
-    my ($self, $url, $dir) = @_;
-    die "Already exists $dir\n" if -e $dir;
-    $dir = Cwd::abs_path($dir);
-    my $parent = File::Basename::dirname($dir);
-    File::Path::mkpath($parent) unless -d $parent;
-    my $tempdir = File::Temp::tempdir(CLEANUP => 1);
-    my $base = File::Basename::basename($url);
-    my $file = "$tempdir/$base";
 
-    my $res = HTTP::Tinyish->new->mirror($url => $file);
-    die "Failed to get $url: $res->{status} $res->{reason}\n" unless $res->{success};
-    {
-        my $guard = File::pushd::pushd($tempdir);
-        (my $target = $base) =~ s/\.tar\.gz$//;
-        system "tar", "xzf", $base;
-        die "Failed `tar xzf $base`\n" if $? != 0 || !-d $target;
-        File::Copy::move($target, $dir)
-            or die "Faile to move $target to $dir: $!\n";
+sub install {
+    my ($self, $tarball, $as) = @_;
+    my $tempdir = File::Temp::tempdir(CLEANUP => 1);
+    my $guard = File::pushd::pushd($tempdir);
+    (my $target = File::Basename::basename($tarball)) =~ s/\.tar\.gz$//;
+    system "tar", "xzf", $tarball;
+    die "Failed `tar xzf $tarball`\n" if $? != 0 || !-d $target;
+    File::Copy::move($target, $as)
+        or die "Faile to move $target to $as: $!\n";
+}
+
+sub download {
+    my ($self, $url, $target) = @_;
+    my $res = HTTP::Tinyish->new->mirror($url => $target);
+    if ($res->{success}) {
+        warn "Using cache $target\n" if $res->{status} == 304;
+        return 1;
+    } else {
+        die "Failed to download $url: $res->{status} $res->{reason}\n";
     }
 }
+
 sub available {
     my $self = shift;
     return $self->{available} if $self->{available};
