@@ -301,7 +301,7 @@ sub download {
 sub available {
     my $self = shift;
     return $self->{available} if $self->{available};
-    my $url = "https://api.github.com/repos/shoichikaji/relocatable-perl/releases";
+    my $url = "https://api.github.com/repos/skaji/relocatable-perl/releases";
     my $res = HTTP::Tinyish->new->get($url);
     die "Failed to get $url: $res->{status} $res->{reason}\n" unless $res->{success};
     my $releases = JSON::PP::decode_json($res->{content});
@@ -336,7 +336,7 @@ App->run(@ARGV);
 __DATA__
 
 Summary: Download precompiled perl binaries
- from https://github.com/shoichikaji/relocatable-perl
+ from https://github.com/skaji/relocatable-perl
 
 Usage: plenv download [options] <version>
 

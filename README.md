@@ -2,14 +2,14 @@
 
 This is a [plenv](https://github.com/tokuhirom/plenv) plugin
 that downloads precompiled perl binaries
-from https://github.com/shoichikaji/relocatable-perl.
+from https://github.com/skaji/relocatable-perl.
 
 That is, you do **NOT** need to compile perls from source code, just downloading.
 
 ## Install
 
 ```
-$ git clone https://github.com/shoichikaji/plenv-download ~/.plenv/plugins/plenv-download
+$ git clone https://github.com/skaji/plenv-download ~/.plenv/plugins/plenv-download
 ```
 
 ## Usage
