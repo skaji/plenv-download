@@ -234,12 +234,6 @@ sub run {
     if (-f $cache) {
         warn "Using cache $cache\n";
     } else {
-        my $res = HTTP::Tinyish->new->head($url);
-        if ($res->{status} == 404) {
-            die "Cannot find $version, try `plenv download --list`\n";
-        } elsif (!$res->{success}) {
-            die "Failed to get $url: $res->{status} $res->{reason}\n";
-        }
         File::Path::mkpath($cache_dir) unless -d $cache_dir;
         warn "Downloading $url\n";
         $self->download($url => $cache);
