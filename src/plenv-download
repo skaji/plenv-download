@@ -58,7 +58,11 @@ sub run {
     } else {
         File::Path::mkpath($cache_dir) unless -d $cache_dir;
         warn "Downloading $url\n";
-        $self->download($url => $cache);
+        eval { $self->download($url => $cache) };
+        if (my $error = $@) {
+            eval { File::Path::rmtree($cache_dir) };
+            die $error;
+        }
     }
     $self->install($cache => $target);
     my $name = "relocatable-$version" . ($as ? " (as $as)" : "");
