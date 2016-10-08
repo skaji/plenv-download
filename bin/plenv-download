@@ -234,12 +234,16 @@ sub run {
     if (-f $cache) {
         warn "Using cache $cache\n";
     } else {
-        File::Path::mkpath($cache_dir) unless -d $cache_dir;
+        (undef, my $temp) = File::Temp::tempfile(UNLINK => 0, EXLOCK => 0, OPEN => 0);
         warn "Downloading $url\n";
-        eval { $self->download($url => $cache) };
+        eval { $self->download($url => $temp) };
         if (my $error = $@) {
-            eval { File::Path::rmtree($cache_dir) };
+            unlink $temp;
             die $error;
+        } else {
+            File::Path::mkpath($cache_dir) unless -d $cache_dir;
+            chmod 0644, $temp;
+            File::Copy::move($temp, $cache) or die $!;
         }
     }
     $self->install($cache => $target);
