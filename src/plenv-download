@@ -16,6 +16,7 @@ use JSON::PP ();
 
 our $VERSION = '0.02';
 our $RELEASE_URL = "https://github.com/skaji/relocatable-perl/releases/download/%s/perl-%s.tar.gz";
+our $LATEST_URL = 'https://raw.githubusercontent.com/skaji/relocatable-perl/master/LATEST';
 
 sub _numify {
     my $v = shift;
@@ -37,11 +38,7 @@ sub run {
 
     my $version = shift @ARGV;
     die "Missing version argument, try `plenv download --help`\n" unless $version;
-    my $release;
-    if ($version =~ /latest/i) {
-        $release = $self->available->[-1];
-        $version = $release->{version};
-    }
+    $version = $self->latest_version if $version =~ /latest/i;
 
     my $archname = $self->archname
         or die "Sorry, there is no precompiled perls for your platform\n";
@@ -97,7 +94,11 @@ sub cmd_list {
         my $version = $available->[$i]{version};
         my $body    = $available->[$i]{body};
         print $version;
-        print " ($body)" if $body;
+        if ($body) {
+            chomp $body;
+            $body =~ s/\n/ /g;
+            print " ($body)";
+        }
         print "  **LATEST**" if $i == $#{$available};
         print "\n";
     }
@@ -121,6 +122,18 @@ sub download {
         return 1;
     } else {
         die "Failed to download $url: $res->{status} $res->{reason}\n";
+    }
+}
+
+sub latest_version {
+    my $self = shift;
+    my $res = HTTP::Tinyish->new->get($LATEST_URL);
+    if ($res->{success}) {
+        my $latest = $res->{content};
+        chomp $latest;
+        $latest;
+    } else {
+        die "Failed to get $LATEST_URL: $res->{status} $res->{reason}\n";
     }
 }
 
