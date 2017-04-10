@@ -25,7 +25,7 @@ $fatpacked{"HTTP/Tiny.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'HTTP_
 HTTP_TINY
 
 $fatpacked{"HTTP/Tinyish.pm"} = '#line '.(1+__LINE__).' "'.__FILE__."\"\n".<<'HTTP_TINYISH';
-  package HTTP::Tinyish;use strict;use warnings;use Carp ();our$VERSION='0.11';our$PreferredBackend;our@Backends=map "HTTP::Tinyish::$_",qw(LWP HTTPTiny Curl Wget);my%configured;sub new {my($class,%attr)=@_;bless \%attr,$class}for my$method (qw/get head put post delete mirror/){no strict 'refs';eval <<"HERE"}sub request {my$self=shift;$self->_backend_for($_[1])->request(@_)}sub _backend_for {my($self,$url)=@_;my($scheme)=$url =~ m!^(https?):!;Carp::croak "URL Scheme '$url' not supported." unless$scheme;for my$backend ($self->backends){$self->configure_backend($backend)or next;if ($backend->supports($scheme)){return$backend->new(%$self)}}Carp::croak "No backend configured for scheme $scheme"}sub backends {$PreferredBackend ? ($PreferredBackend): @Backends}sub configure_backend {my($self,$backend)=@_;unless (exists$configured{$backend}){$configured{$backend}=eval {require_module($backend);$backend->configure}}$configured{$backend}}sub require_module {local $_=shift;s!::!/!g;require "$_.pm"}1;
+  package HTTP::Tinyish;use strict;use warnings;use Carp ();our$VERSION='0.12';our$PreferredBackend;our@Backends=map "HTTP::Tinyish::$_",qw(LWP HTTPTiny Curl Wget);my%configured;sub new {my($class,%attr)=@_;bless \%attr,$class}for my$method (qw/get head put post delete mirror/){no strict 'refs';eval <<"HERE"}sub request {my$self=shift;$self->_backend_for($_[1])->request(@_)}sub _backend_for {my($self,$url)=@_;my($scheme)=$url =~ m!^(https?):!;Carp::croak "URL Scheme '$url' not supported." unless$scheme;for my$backend ($self->backends){$self->configure_backend($backend)or next;if ($backend->supports($scheme)){return$backend->new(%$self)}}Carp::croak "No backend configured for scheme $scheme"}sub backends {$PreferredBackend ? ($PreferredBackend): @Backends}sub configure_backend {my($self,$backend)=@_;unless (exists$configured{$backend}){$configured{$backend}=eval {require_module($backend);$backend->configure}}$configured{$backend}}sub require_module {local $_=shift;s!::!/!g;require "$_.pm"}1;
       sub $method {
           my \$self = shift;
           \$self->_backend_for(\$_[0])->$method(\@_);
@@ -225,7 +225,8 @@ sub run {
     my $root = $ENV{PLENV_ROOT} || "$ENV{HOME}/.plenv";
     my $target = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
     die "Already exists $target\n" if -e $target;
-    my $cache_dir = $ENV{PLENV_DOWNLOAD_CACHE} || "$root/cache/relocatable-$version";
+    my $cache_root = $ENV{PLENV_DOWNLOAD_CACHE} || "$root/cache";
+    my $cache_dir = "$cache_root/relocatable-$version";
     my $cache = "$cache_dir/" . File::Basename::basename($url);
 
     if (-f $cache) {
@@ -299,7 +300,7 @@ sub download {
     if ($res->{success}) {
         return 1;
     } else {
-        die "Failed to download $url: $res->{status} $res->{reason}\n";
+        die "$res->{status} $res->{reason}, $url\n";
     }
 }
 
@@ -320,7 +321,7 @@ sub available {
     return $self->{available} if $self->{available};
     my $url = "https://api.github.com/repos/skaji/relocatable-perl/releases";
     my $res = HTTP::Tinyish->new->get($url);
-    die "Failed to get $url: $res->{status} $res->{reason}\n" unless $res->{success};
+    die "$res->{status} $res->{reason}, $url\n" unless $res->{success};
     my $releases = JSON::PP::decode_json($res->{content});
     my @release;
     for my $r (@$releases) {
