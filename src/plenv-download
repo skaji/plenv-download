@@ -47,7 +47,8 @@ sub run {
     my $root = $ENV{PLENV_ROOT} || "$ENV{HOME}/.plenv";
     my $target = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
     die "Already exists $target\n" if -e $target;
-    my $cache_dir = $ENV{PLENV_DOWNLOAD_CACHE} || "$root/cache/relocatable-$version";
+    my $cache_root = $ENV{PLENV_DOWNLOAD_CACHE} || "$root/cache";
+    my $cache_dir = "$cache_root/relocatable-$version";
     my $cache = "$cache_dir/" . File::Basename::basename($url);
 
     if (-f $cache) {
