@@ -192,8 +192,8 @@ use Getopt::Long qw(:config no_auto_abbrev no_ignore_case bundling);
 use HTTP::Tinyish;
 use JSON::PP ();
 
-our $VERSION = '0.03';
-our $RELEASE_URL = "https://github.com/skaji/relocatable-perl/releases/download/%s/perl-%s.tar.gz";
+our $VERSION = '0.04';
+our $RELEASE_URL = "https://github.com/skaji/relocatable-perl/releases/download/%s/perl-%s.%s";
 our $LATEST_URL = 'https://raw.githubusercontent.com/skaji/relocatable-perl/master/LATEST';
 
 sub _numify {
@@ -220,7 +220,9 @@ sub run {
 
     my $archname = $self->archname
         or die "Sorry, there is no precompiled perls for your platform\n";
-    my $url = sprintf $RELEASE_URL, $version, $archname;
+
+    my $url = sprintf $RELEASE_URL,
+        $version, $archname, $self->take_xz($version) ? "tar.xz" : "tar.gz";
 
     my $root = $ENV{PLENV_ROOT} || "$ENV{HOME}/.plenv";
     my $target = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
@@ -247,6 +249,17 @@ sub run {
     $self->install($cache => $target);
     my $name = "relocatable-$version" . ($as ? " (as $as)" : "");
     warn "Successfully installed $name, try `plenv versions`\n";
+}
+
+sub take_xz {
+    my ($self, $version) = @_;
+    `xz --version >/dev/null 2>&1`;
+    return if $? != 0;
+    if ($version =~ /^5\.(\d+)\.(\d+)\.(\d+)$/) {
+        my $v = $1 * 1_000_000 + $2 * 1_000 + $3;
+        return 1 if $v >= 26_001_001;
+    }
+    return;
 }
 
 sub archname {
@@ -287,9 +300,12 @@ sub install {
     my ($self, $tarball, $as) = @_;
     my $tempdir = File::Temp::tempdir(CLEANUP => 1);
     my $guard = File::pushd::pushd($tempdir);
-    (my $target = File::Basename::basename($tarball)) =~ s/\.tar\.gz$//;
-    system "tar", "xzf", $tarball;
-    die "Failed `tar xzf $tarball`\n" if $? != 0 || !-d $target;
+
+    my %tar_option = (gz => "xzf", bz2 => "xjf", xz => "xJf");
+    (my $target = File::Basename::basename($tarball)) =~ s/\.tar\.(gz|bz2|xz)$//;
+    my $tar_option = $tar_option{$1};
+    system "tar", $tar_option, $tarball;
+    die "Failed `tar $tar_option $tarball`\n" if $? != 0 || !-d $target;
     File::Copy::move($target, $as)
         or die "Faile to move $target to $as: $!\n";
 }
