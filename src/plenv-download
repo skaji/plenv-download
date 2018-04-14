@@ -134,10 +134,13 @@ sub install {
 
 sub download {
     my ($self, $url, $target) = @_;
-    my $res = HTTP::Tinyish->new->mirror($url => $target);
+    my $res = HTTP::Tinyish->new(timeout => 5*60, verify_SSL => 1)->mirror($url => $target);
     if ($res->{success}) {
+        my $cmd = $url =~ /\.xz$/ ? "xz" : $url =~ /\.bz2$/ ? "bzip2" : "gz";
+        !system $cmd, "--test", $target or die;
         return 1;
     } else {
+        unlink $target;
         die "$res->{status} $res->{reason}, $url\n";
     }
 }
