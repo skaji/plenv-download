@@ -14,7 +14,7 @@ use Getopt::Long qw(:config no_auto_abbrev no_ignore_case bundling);
 use HTTP::Tinyish;
 use JSON::PP ();
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $RELEASE_URL = "https://github.com/skaji/relocatable-perl/releases/download/%s/perl-%s.%s";
 our $LATEST_URL = 'https://raw.githubusercontent.com/skaji/relocatable-perl/master/LATEST';
 
