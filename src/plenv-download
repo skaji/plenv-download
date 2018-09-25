@@ -47,6 +47,7 @@ sub run {
         $version, $archname, $self->take_xz($version) ? "tar.xz" : "tar.gz";
 
     my $root = $ENV{PLENV_ROOT} || "$ENV{HOME}/.plenv";
+    File::Path::mkpath("$root/versions") unless -d "$root/versions";
     my $target = $as ? "$root/versions/$as" : "$root/versions/relocatable-$version";
     die "Already exists $target\n" if -e $target;
     my $cache_root = $ENV{PLENV_DOWNLOAD_CACHE} || "$root/cache";
