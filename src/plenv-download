@@ -107,15 +107,7 @@ sub cmd_list {
     my $available = $self->available;
     for my $i (0 .. $#{$available}) {
         my $version = $available->[$i]{version};
-        my $body    = $available->[$i]{body};
-        print $version;
-        if ($body) {
-            chomp $body;
-            $body =~ s/\n/ /g;
-            print " ($body)";
-        }
-        print "  **LATEST**" if $i == $#{$available};
-        print "\n";
+        print $version, "\n";
     }
 }
 
@@ -169,9 +161,6 @@ sub available {
     for my $r (@$releases) {
         my $version = $r->{tag_name};
         my $assets  = $r->{assets};
-        my $body    = $r->{body};
-        $body =~ s/^[*-]\s+//gsm;
-        $body =~ s/\r\n/ /g;
         my %url;
         for my $asset (@$assets) {
             my $url = $asset->{"browser_download_url"};
@@ -181,7 +170,7 @@ sub available {
                 $url{"x86_64-linux"} = $url;
             }
         }
-        push @release, { version => $version, body => $body, url => \%url } if %url;
+        push @release, { version => $version, url => \%url } if %url;
     }
     $self->{available} = [
         sort { _numify($a->{version}) <=> _numify($b->{version}) }

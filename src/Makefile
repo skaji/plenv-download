@@ -2,6 +2,7 @@ fatpack: installdeps
 	fatpack-simple -o ../bin/plenv-download plenv-download
 
 installdeps:
+	rm -rf local
 	cpm install --target-perl 5.8.5
 
 bump:
