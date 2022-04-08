@@ -1,4 +1,0 @@
-requires 'File::pushd';
-requires 'HTTP::Tiny';
-requires 'HTTP::Tinyish', '0.07';
-requires 'JSON::PP';
