@@ -1,37 +1,39 @@
 # plenv download
 
-This is a [plenv](https://github.com/tokuhirom/plenv) plugin
-that downloads precompiled perl binaries
-from https://github.com/skaji/relocatable-perl.
+This is a [plenv](https://github.com/tokuhirom/plenv) plugin that downloads precompiled perl binaries from https://github.com/skaji/relocatable-perl.
 
-That is, you do **NOT** need to compile perls from source code, just downloading.
+You do **NOT** need to compile perls from source code anymore :wink:
 
 ## Install
 
-```
-$ git clone https://github.com/skaji/plenv-download ~/.plenv/plugins/plenv-download
+```console
+❯ git clone https://github.com/skaji/plenv-download $(plenv root)/plugins/plenv-download
 ```
 
 ## Usage
 
-```
-$ plenv donwload latest
-Successfully installed relocatable-5.22.1.0, try `plenv versions`.
-
-$ plenv versions
-* system
-  relocatable-5.22.1.0
-
-$ plenv global relocatable-5.22.1.0
-
-$ perl -v
-This is perl 5, version 22, subversion 1 (v5.22.1) built for darwin-2level
+```console
+❯ plenv download --list
+5.34.1.0
+5.34.0.2
+5.34.0.1
+5.34.0.0
 ...
+
+❯ plenv download latest
+Downloading https://github.com/skaji/relocatable-perl/releases/download/5.34.1.0/perl-darwin-2level.tar.xz
+Unpacking /Users/skaji/env/plenv/cache/relocatable-5.34.1.0/perl-darwin-2level.tar.xz
+Successfully installed 5.34.1.0, try `plenv global relocatable-5.34.1.0`
+
+❯ plenv global relocatable-5.34.1.0
+
+❯ perl -v
+This is perl 5, version 34, subversion 1 (v5.34.1) built for darwin-2level
 ```
 
 ## Caveats
 
-Relocatable perls are only available for 64bit OS X and Linux.
+Precompiled perls are available only for macOS x86_64 and Linux x86_64.
 
 ## Author
 
@@ -40,12 +42,3 @@ Shoichi Kaji
 ## License
 
 Licensed under the same terms as Perl.
-
-Also note that bin/plenv-download embeds the following distributions,
-that have their own licenses:
-
-* File-Which https://metacpan.org/release/File-Which
-* File-pushd https://metacpan.org/release/File-pushd
-* HTTP-Tiny https://metacpan.org/release/HTTP-Tiny
-* HTTP-Tinyish https://metacpan.org/release/HTTP-Tinyish
-* IPC-Run3 https://metacpan.org/release/IPC-Run3
