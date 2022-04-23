@@ -161,6 +161,11 @@ main() {
 
   local os=$(uname -s | tr '[:upper:]' '[:lower:]')
   local arch=$(uname -m)
+  if [[ "$os $arch" = "darwin x86_64" ]] || [[ "$os $arch" = "linux x86_64" ]] || [[ "$os $arch" = "linux aarch64" ]]; then
+    : # OK
+  else
+    die "Unsupported environment: $os $arch"
+  fi
 
   if [[ -n $option_list ]]; then
     available_versions $os $arch
