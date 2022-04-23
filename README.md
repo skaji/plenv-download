@@ -33,7 +33,11 @@ This is perl 5, version 34, subversion 1 (v5.34.1) built for darwin-2level
 
 ## Caveats
 
-Precompiled perls are available only for macOS x86_64 and Linux x86_64.
+Currently precompiled perls are available for
+
+* Linux x86_64
+* Linux aarch64
+* macOS x86_64
 
 ## Author
 
