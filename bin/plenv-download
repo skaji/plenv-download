@@ -77,7 +77,7 @@ has_xz() {
   fi
 }
 
-RELEASES_CSV_URL=https://raw.githubusercontent.com/skaji/relocatable-perl/master/releases.csv
+RELEASES_CSV_URL=https://raw.githubusercontent.com/skaji/relocatable-perl/main/releases.csv
 
 available_versions() {
   local os=$1
@@ -167,10 +167,11 @@ main() {
 
   local os=$(uname -s | tr '[:upper:]' '[:lower:]')
   local arch=$(uname -m)
-  if [[ "$os $arch" = "darwin x86_64" ]] || [[ "$os $arch" = "linux x86_64" ]] || [[ "$os $arch" = "linux aarch64" ]]; then
-    : # OK
-  else
-    die "Unsupported environment: $os $arch"
+  if [[ $arch = x86_64 ]]; then
+    arch=amd64
+  fi
+  if [[ $arch = aarch64 ]]; then
+    arch=arm64
   fi
 
   if [[ -n $option_list ]]; then
