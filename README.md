@@ -31,14 +31,6 @@ Successfully installed 5.34.1.0, try `plenv global relocatable-5.34.1.0`
 This is perl 5, version 34, subversion 1 (v5.34.1) built for darwin-2level
 ```
 
-## Caveats
-
-Currently precompiled perls are available for
-
-* linux amd64
-* linux arm64
-* macos amd64
-
 ## Author
 
 Shoichi Kaji
