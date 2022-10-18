@@ -8,6 +8,7 @@ Usage: plenv download [options] VERSION
 Options:
   -l, --list     show available versions
   -g, --global   execute `plenv global` after installing
+  -r, --rehash   execute `plenv rehash` after installing
       --as=NAME  install perl as NAME (default: relocatable-VERSION)
   -h, --help     show this help
 
@@ -102,6 +103,7 @@ download_url() {
 main() {
   local option_list=
   local option_global=
+  local option_rehash=
   local option_help=
   local option_complete=
   local option_as=
@@ -116,6 +118,10 @@ main() {
       ;;
     --global | -g)
       option_global=1
+      _argv=("${_argv[@]:1}")
+      ;;
+    --rehash | -r)
+      option_rehash=1
       _argv=("${_argv[@]:1}")
       ;;
     --help | -h)
@@ -222,12 +228,14 @@ main() {
 
   info "Unpacking $local_tarball"
   unpack $local_tarball $prefix
+  info "Successfully installed $version"
   if [[ -n $option_global ]]; then
-    info "Successfully installed $version"
     info "Executing plenv global $name"
     plenv global $name
-  else
-    info "Successfully installed $version, try \`plenv global $name\`"
+  fi
+  if [[ -n $option_rehash ]]; then
+    info "Executing plenv rehash"
+    plenv rehash
   fi
 }
 
